@@ -1,0 +1,172 @@
+:root {
+  --vk-color-primary: #a78bfa;
+  --vk-color-primary-light-3: #c4b5fd;
+  --vk-color-primary-light-5: #ddd6fe;
+  --vk-color-primary-light-7: #ede9fe;
+  --vk-color-primary-light-8: #f3efff;
+  --vk-color-primary-light-9: #f8f5ff;
+  --vk-color-primary-dark-2: #8b5cf6;
+
+  --vp-c-brand: var(--vk-color-primary);
+  --vp-c-brand-1: #8b5cf6;
+  --vp-c-brand-2: #a78bfa;
+  --vp-c-brand-3: #c4b5fd;
+  --vp-c-brand-soft: rgba(167, 139, 250, 0.16);
+  --vp-c-brand-light: #c4b5fd;
+  --vp-c-brand-lighter: #ddd6fe;
+  --vp-c-brand-dark: #8b5cf6;
+  --vp-c-brand-darker: #7c3aed;
+
+  --vp-c-tip-1: var(--vp-c-brand-1);
+  --vp-c-tip-2: var(--vp-c-brand-2);
+  --vp-c-tip-3: var(--vp-c-brand-3);
+  --vp-c-tip-soft: var(--vp-c-brand-soft);
+
+  --vp-code-block-bg: #0d1117;
+  --vp-code-block-divider-color: #30363d;
+  --vp-code-lang-color: rgba(255, 255, 255, 0.56);
+  --vp-code-tab-text-color: rgba(237, 233, 254, 0.72);
+  --vp-code-tab-hover-text-color: #f5f3ff;
+  --vp-code-tab-active-text-color: #ddd6fe;
+  --vp-code-tab-active-bar-color: #a78bfa;
+  --vp-code-line-highlight-color: rgba(110, 118, 129, 0.28);
+  --vp-code-line-number-color: rgba(255, 255, 255, 0.36);
+  --vp-code-line-diff-add-color: rgba(46, 160, 67, 0.24);
+  --vp-code-line-diff-add-symbol-color: #56d364;
+  --vp-code-line-diff-remove-color: rgba(248, 81, 73, 0.24);
+  --vp-code-line-diff-remove-symbol-color: #ff7b72;
+  --vp-code-copy-code-border-color: #30363d;
+  --vp-code-copy-code-bg: #161b22;
+  --vp-code-copy-code-hover-border-color: #8b5cf6;
+  --vp-code-copy-code-hover-bg: #21262d;
+  --vp-code-copy-code-active-text: rgba(255, 255, 255, 0.72);
+}
+
+/* .vitepress/theme/custom.css */
+
+/* 移除 FontAwesome 图标的默认间距 */
+.fa,
+.fas,
+.far,
+.fal,
+.fab,
+.fa-solid,
+.fa-regular,
+.fa-light,
+.fa-thin,
+.fa-duotone {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* 或者针对特定情况 */
+.icon {
+  margin-right: 0 !important;
+}
+
+/* 如果图标是行内元素，设置为 inline-flex 来更好地控制间距 */
+i[class^='fa-'],
+i[class*=' fa-'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0 !important;
+}
+
+/* Mermaid 流程图居中显示 */
+.mermaid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ── 代码块滚动条样式 ─────────────────────── */
+
+/* 代码块容器滚动条 - Webkit (Chrome/Safari/Edge) */
+div[class*='language-']::-webkit-scrollbar,
+div[class*='language-'] pre::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+
+div[class*='language-']::-webkit-scrollbar-track,
+div[class*='language-'] pre::-webkit-scrollbar-track {
+  background: #0d1117; /* 与代码块背景一致 */
+}
+
+div[class*='language-']::-webkit-scrollbar-thumb,
+div[class*='language-'] pre::-webkit-scrollbar-thumb {
+  background: #8b5cf6; /* 紫色滑块 */
+  border-radius: 1px;
+}
+
+div[class*='language-']::-webkit-scrollbar-thumb:hover,
+div[class*='language-'] pre::-webkit-scrollbar-thumb:hover {
+  background: #a78bfa; /* hover 时更浅的紫色 */
+}
+
+div[class*='language-']::-webkit-scrollbar-corner,
+div[class*='language-'] pre::-webkit-scrollbar-corner {
+  background: #0d1117;
+}
+
+/* 代码块容器滚动条 - Firefox */
+div[class*='language-'],
+div[class*='language-'] pre {
+  scrollbar-width: thin;
+  scrollbar-color: #8b5cf6 #0d1117;
+}
+
+/* 代码组 tabs 滚动条 - Webkit */
+.vp-code-group .tabs::-webkit-scrollbar {
+  height: 2px;
+}
+
+.vp-code-group .tabs::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+
+.vp-code-group .tabs::-webkit-scrollbar-thumb {
+  background: #8b5cf6;
+  border-radius: 1px;
+}
+
+.vp-code-group .tabs::-webkit-scrollbar-thumb:hover {
+  background: #a78bfa;
+}
+
+/* 代码组 tabs 滚动条 - Firefox */
+.vp-code-group .tabs {
+  scrollbar-width: thin;
+  scrollbar-color: #8b5cf6 #0d1117;
+}
+
+/* 表格统一撑满正文宽度：VitePress 默认 table{display:block} 会让表格按内容收缩，
+   内容少的表格只有页面一半宽。改成 display:table + width:100% 后所有表格都对齐正文宽度
+   （AnyBlock 的 [width(...)] 表格本来就是这个效果） */
+.vp-doc table {
+  display: table;
+  width: 100%;
+}
+
+/* 表格宽度被锁死后，单元格里的长代码串没有断行机会会溢出到相邻列甚至表格外，
+   这里放开断行，只在放不下时才断（overflow-wrap:anywhere，会继承给里面的 code） */
+.vp-doc table th,
+.vp-doc table td {
+  overflow-wrap: anywhere;
+}
+
+/* 正文文字色：用 `html body` 而不是 `body`，多一个类型选择器提高优先级，
+   避免后续异步加载的第三方样式（同优先级、后加载）把正文色覆盖掉。 */
+html body {
+  color: var(--vp-c-text-1);
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  color: var(--vp-c-text-1);
+}
