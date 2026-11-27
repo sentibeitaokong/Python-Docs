@@ -2,12 +2,8 @@
 //
 // 本文件所在目录没有 SKILL.md，所以不会被当成 skill 加载——它只是两个 skill 之间的共享库。
 import { execFileSync } from 'node:child_process'
+import fs from 'node:fs'
 import path from 'node:path'
-
-// 与 apps/docs/.vitepress/config.mts:155 保持一致。改了那里就得改这里。
-export const SITE_BASE = '/Python3Docs'
-export const DOCS_SUBDIR = 'apps/docs'
-export const DEFAULT_PORT = 5173
 
 let cachedRoot = null
 export function repoRoot() {
@@ -21,6 +17,27 @@ export function repoRoot() {
   }
   return cachedRoot
 }
+
+// 站点 base 直接从 VitePress 配置里读取，避免仓库改名后两处不一致——
+// URL 映射不到 dev server 时，table-width 会以为服务没起来而静默跳过。
+// 这里统一去掉末尾斜杠，拼 URL 时再补。
+function readSiteBase() {
+  try {
+    const config = fs.readFileSync(
+      path.join(repoRoot(), 'apps/docs/.vitepress/config.mts'),
+      'utf8',
+    )
+    const m = config.match(/const\s+base\s*=\s*['"]([^'"]+)['"]/)
+    if (m) return m[1].replace(/\/+$/, '')
+  } catch {
+    /* 读不到配置时退回根路径 */
+  }
+  return ''
+}
+
+export const SITE_BASE = readSiteBase()
+export const DOCS_SUBDIR = 'apps/docs'
+export const DEFAULT_PORT = 5173
 
 export function docsRoot() {
   return path.join(repoRoot(), DOCS_SUBDIR)
