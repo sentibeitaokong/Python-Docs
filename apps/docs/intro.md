@@ -18,11 +18,13 @@ apps/docs
 
 ## 新增一篇文档
 
-1. 在对应目录下新建 `.md` 文件，例如 `apps/docs/basic/variables.md`。
-2. 在 `apps/docs/.vitepress/config.mts` 的 `sidebar` 中登记标题和链接 `/basic/variables`。
-3. 运行 `pnpm docs:dev` 预览，`pnpm docs:build` 检查构建。
+- 在对应目录下新建 `.md` 文件，例如 `apps/docs/basic/variables.md`。
+- 在 `apps/docs/.vitepress/config.mts` 的 `sidebar` 中登记标题和链接 `/basic/variables`。
+- 运行 `pnpm docs:dev` 预览，`pnpm docs:build` 检查构建。
 
 ## 可用的 Markdown 能力
+
+[width(20,80)]
 
 | 能力           | 写法                                   |
 | -------------- | -------------------------------------- |
