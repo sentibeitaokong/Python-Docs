@@ -34,7 +34,6 @@
     "docs:lint": "markdownlint-cli2 \"apps/docs/**/*.md\" \"README.md\"",
     "docs:clean": "rm -rf apps/docs/.vitepress/.temp apps/docs/.vitepress/cache node_modules/.vite",
     "docs:rebuild": "pnpm run docs:clean && pnpm run docs:build",
-    "deploy": "bash scripts/deploy.sh",
     "commit": "cz",
     "prepare": "husky"
   },
