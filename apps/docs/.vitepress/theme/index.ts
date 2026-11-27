@@ -8,6 +8,7 @@ import type Viewer from 'viewerjs'
 import 'viewerjs/dist/viewer.css'
 import './style.css'
 import './custom.css'
+import PythonPlayground from './components/PythonPlayground.vue'
 // AnyBlock 的样式：包的 exports 没有声明 "./styles.css" 子路径，
 // 由 .vitepress/config.mts 里的 alias 映射到包内实际文件，
 // 不要写死 node_modules 相对路径（安装布局变化时会解析失败）
@@ -15,6 +16,10 @@ import 'markdown-it-any-block/styles.css'
 
 export default {
   extends: DefaultTheme,
+  // markdown 里的 <PythonPlayground> 由 config.mts 的 fence 渲染器生成
+  enhanceApp({ app }) {
+    app.component('PythonPlayground', PythonPlayground)
+  },
   setup() {
     // 同一时刻只保留一个实例；只有容器本身被替换（例如首页 ↔ 文档页）时才重建
     let viewer: Viewer | null = null

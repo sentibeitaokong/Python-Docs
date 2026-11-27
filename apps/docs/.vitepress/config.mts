@@ -112,6 +112,23 @@ const config: UserConfigFn<DefaultTheme.Config> = async () => {
         md.use(taskLists, { enabled: true }) //任务列表
         md.use(footnote) //论文索引
         md.use(ab_mdit) //AnyBlock：表格列宽 [width(30,70)]、列表转表格等
+
+        // 所有 ```python 代码块都渲染成可编辑、可运行的 Python 编辑器。
+        // 代码用 base64 塞进 props，避免换行、引号和 HTML 特殊字符破坏标签；
+        // 组件在客户端挂载后懒加载 CodeMirror，点击「运行」时才加载 Pyodide。
+        // bash / text 等非 Python 代码块保持原样。
+        const renderFence = md.renderer.rules.fence
+        md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+          const token = tokens[idx]
+          const lang = token.info.trim().split(/\s+/)[0]
+          if (lang === 'python') {
+            const code = Buffer.from(token.content, 'utf8').toString('base64')
+            return `<PythonPlayground code="${code}"></PythonPlayground>\n`
+          }
+          return renderFence
+            ? renderFence(tokens, idx, options, env, self)
+            : self.renderToken(tokens, idx, options)
+        }
       },
     },
     themeConfig: {
@@ -172,6 +189,7 @@ const config: UserConfigFn<DefaultTheme.Config> = async () => {
       },
       nav: [
         { text: '简介', link: '/intro' },
+        { text: '基础语法', link: '/pythonBasics/basic/syntaxAndVariables' },
         {
           text: '相关链接',
           items: [
@@ -192,19 +210,97 @@ const config: UserConfigFn<DefaultTheme.Config> = async () => {
       ],
 
       // 新增文档后，在这里登记目录和链接即可出现在侧边栏。
-      // 多级目录的写法参考：
-      // {
-      //   text: '基础语法',
-      //   collapsed: false,
-      //   items: [
-      //     { text: '变量与类型', link: '/basic/variables' },
-      //   ],
-      // }
+      // 数组顺序就是显示顺序；link 带前导斜杠、不带 .md。
       sidebar: [
         {
           text: '开始',
           collapsed: false,
           items: [{ text: 'Python 3 知识体系', link: '/intro' }],
+        },
+        {
+          text: 'Python 基础语法',
+          collapsed: false,
+          items: [
+            {
+              text: '语言基础',
+              collapsed: false,
+              items: [
+                {
+                  text: '语法与变量',
+                  link: '/pythonBasics/basic/syntaxAndVariables',
+                },
+                { text: '数据类型', link: '/pythonBasics/basic/dataTypes' },
+                {
+                  text: '运算符与流程控制',
+                  link: '/pythonBasics/basic/operatorsAndControlFlow',
+                },
+                { text: '字符串', link: '/pythonBasics/basic/strings' },
+                { text: '异常处理', link: '/pythonBasics/basic/exceptions' },
+                {
+                  text: '模块与包',
+                  link: '/pythonBasics/basic/modulesAndPackages',
+                },
+              ],
+            },
+            {
+              text: '数据结构',
+              collapsed: false,
+              items: [
+                { text: '列表', link: '/pythonBasics/dataStructures/list' },
+                { text: '元组', link: '/pythonBasics/dataStructures/tuple' },
+                { text: '字典', link: '/pythonBasics/dataStructures/dict' },
+                { text: '集合', link: '/pythonBasics/dataStructures/set' },
+                {
+                  text: '推导式',
+                  link: '/pythonBasics/dataStructures/comprehensions',
+                },
+              ],
+            },
+            {
+              text: '面向对象',
+              collapsed: false,
+              items: [
+                {
+                  text: '类与实例',
+                  link: '/pythonBasics/oop/classesAndInstances',
+                },
+                { text: '继承与多态', link: '/pythonBasics/oop/inheritance' },
+                { text: '魔术方法', link: '/pythonBasics/oop/magicMethods' },
+                {
+                  text: '属性管理与描述符',
+                  link: '/pythonBasics/oop/propertiesAndDescriptors',
+                },
+                {
+                  text: '抽象基类与协议',
+                  link: '/pythonBasics/oop/abcAndProtocols',
+                },
+              ],
+            },
+            {
+              text: '函数与迭代',
+              collapsed: false,
+              items: [
+                {
+                  text: '函数基础与参数模型',
+                  link: '/pythonBasics/functions/functionBasics',
+                },
+                {
+                  text: '作用域与闭包',
+                  link: '/pythonBasics/functions/closures',
+                },
+                { text: '装饰器', link: '/pythonBasics/functions/decorators' },
+                {
+                  text: '迭代器与可迭代对象',
+                  link: '/pythonBasics/functions/iterators',
+                },
+                { text: '生成器', link: '/pythonBasics/functions/generators' },
+                {
+                  text: '上下文管理器',
+                  link: '/pythonBasics/functions/contextManagers',
+                },
+              ],
+            },
+          ],
         },
       ],
     },

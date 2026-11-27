@@ -2,6 +2,8 @@ node_modules
 apps/docs/.vitepress/cache/
 apps/docs/.vitepress/dist/
 apps/docs/.vitepress/.temp/
+# 由 scripts/copy-pyodide.mjs 在 dev/build 前从 node_modules 生成
+apps/docs/public/pyodide/
 .idea/
 .DS_Store
 .claude/settings.local.json
