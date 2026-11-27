@@ -42,6 +42,9 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          # 仓库尚未启用 Pages 时自动开启（Source 为 GitHub Actions）
+          enablement: true
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
