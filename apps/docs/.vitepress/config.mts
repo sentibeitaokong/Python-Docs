@@ -113,17 +113,21 @@ const config: UserConfigFn<DefaultTheme.Config> = async () => {
         md.use(footnote) //论文索引
         md.use(ab_mdit) //AnyBlock：表格列宽 [width(30,70)]、列表转表格等
 
-        // 所有 ```python 代码块都渲染成可编辑、可运行的 Python 编辑器。
-        // 代码用 base64 塞进 props，避免换行、引号和 HTML 特殊字符破坏标签；
-        // 组件在客户端挂载后懒加载 CodeMirror，点击「运行」时才加载 Pyodide。
+        // 所有 ```python 代码块都渲染成 PythonPlayground，采用「静态 Shiki + 点击懒加载」：
+        // - 构建阶段就用 Shiki 生成高亮 HTML，作为组件的默认插槽直接进静态 HTML，
+        //   首屏和爬虫拿到的都是完整代码，不需要为每个代码块加载编辑器；
+        // - 源码另外用 base64 塞进 props（避免换行、引号和 HTML 特殊字符破坏标签），
+        //   点击代码区时才动态 import CodeMirror，点击「运行」时才加载 Pyodide；
+        // - Pyodide 跑在整站单例的 Web Worker 里，见 theme/components/pyodideClient.ts。
         // bash / text 等非 Python 代码块保持原样。
         const renderFence = md.renderer.rules.fence
         md.renderer.rules.fence = (tokens, idx, options, env, self) => {
           const token = tokens[idx]
           const lang = token.info.trim().split(/\s+/)[0]
-          if (lang === 'python') {
+          if (lang === 'python' && typeof options.highlight === 'function') {
             const code = Buffer.from(token.content, 'utf8').toString('base64')
-            return `<PythonPlayground code="${code}"></PythonPlayground>\n`
+            const highlighted = options.highlight(token.content, 'python', '')
+            return `<PythonPlayground code="${code}">${highlighted}</PythonPlayground>\n`
           }
           return renderFence
             ? renderFence(tokens, idx, options, env, self)

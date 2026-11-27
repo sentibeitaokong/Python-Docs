@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, ref } from 'vue'
 import { runPython, stopPython } from './pyodideClient'
 
-// config.mts 里的 fence 渲染器会把代码转成 base64 传进来，
-// 避免代码里的引号、换行和 HTML 特殊字符破坏组件属性。
+// config.mts 里的 fence 渲染器负责两件事：
+// 1. 把源码转成 base64 传进 props（避免换行、引号和 HTML 特殊字符破坏标签）；
+// 2. 把 Shiki 生成的高亮 HTML 作为默认插槽传进来。
+// 于是首屏只是一段静态高亮代码（可被爬虫和搜索读到），
+// 用户点击代码区后才动态加载 CodeMirror，覆盖成可编辑的编辑器。
 const props = defineProps<{ code: string }>()
 
 const initialCode = decodeBase64(props.code)
 const code = ref(initialCode)
-const mounted = ref(false)
+const mode = ref<'static' | 'editor'>('static')
+const loadingEditor = ref(false)
 const running = ref(false)
 const status = ref('')
 const stdout = ref('')
@@ -60,44 +64,18 @@ async function copy() {
   }
 }
 
-async function run() {
-  if (running.value) return
-  stopped = false
-  running.value = true
-  clearOutput()
-  status.value = '正在连接 Python 运行时…'
-  runStartedAt = performance.now()
-
-  try {
-    await runPython(code.value, {
-      onStatus: text => {
-        if (!stopped) status.value = text
-      },
-      onStdout: text => appendOutput(stdout, text),
-      onStderr: text => appendOutput(stderr, text),
-    })
-
-    if (!stopped) {
-      status.value = `运行完成 · ${Math.round(performance.now() - runStartedAt)} ms`
-    }
-  } catch (reason) {
-    if (!stopped) {
-      error.value = reason instanceof Error ? reason.message : String(reason)
-      status.value = '运行失败'
-    }
-  } finally {
-    running.value = false
+/**
+ * 按需把静态代码块替换成 CodeMirror 编辑器。
+ * 动态 import 的 chunk 只会加载一次，之后同一页面的其它代码块点击时直接复用。
+ */
+async function activateEditor() {
+  if (mode.value === 'editor') {
+    view?.focus()
+    return
   }
-}
+  if (loadingEditor.value) return
 
-function stop() {
-  stopped = true
-  stopPython()
-  running.value = false
-  status.value = '已停止'
-}
-
-onMounted(async () => {
+  loadingEditor.value = true
   try {
     const [{ EditorView, basicSetup }, { python }, { oneDark }] =
       await Promise.all([
@@ -106,6 +84,9 @@ onMounted(async () => {
         import('@codemirror/theme-one-dark'),
       ])
 
+    mode.value = 'editor'
+    // 等 v-if 把编辑器的挂载点渲染出来再创建 EditorView
+    await nextTick()
     if (!editorHost.value) return
 
     view = new EditorView({
@@ -147,12 +128,57 @@ onMounted(async () => {
       ],
       parent: editorHost.value,
     })
-
-    mounted.value = true
+    view.focus()
   } catch {
     status.value = '编辑器加载失败，代码仍可查看和复制'
+  } finally {
+    loadingEditor.value = false
   }
-})
+}
+
+/** 点击静态代码区进入编辑；用户正在框选文字（想复制）时不打断。 */
+function handleStaticClick() {
+  const selection = window.getSelection()
+  if (selection && !selection.isCollapsed) return
+  void activateEditor()
+}
+
+async function run() {
+  if (running.value) return
+  stopped = false
+  running.value = true
+  clearOutput()
+  status.value = '正在连接 Python 运行时…'
+  runStartedAt = performance.now()
+
+  try {
+    await runPython(code.value, {
+      onStatus: text => {
+        if (!stopped) status.value = text
+      },
+      onStdout: text => appendOutput(stdout, text),
+      onStderr: text => appendOutput(stderr, text),
+    })
+
+    if (!stopped) {
+      status.value = `运行完成 · ${Math.round(performance.now() - runStartedAt)} ms`
+    }
+  } catch (reason) {
+    if (!stopped) {
+      error.value = reason instanceof Error ? reason.message : String(reason)
+      status.value = '运行失败'
+    }
+  } finally {
+    running.value = false
+  }
+}
+
+function stop() {
+  stopped = true
+  stopPython()
+  running.value = false
+  status.value = '已停止'
+}
 
 onBeforeUnmount(() => {
   view?.destroy()
@@ -172,6 +198,16 @@ onBeforeUnmount(() => {
           @click="copy"
         >
           复制
+        </button>
+        <button
+          v-if="mode === 'static'"
+          type="button"
+          class="py-playground__button"
+          title="加载编辑器（也可以直接点击代码区）"
+          :disabled="loadingEditor"
+          @click="activateEditor"
+        >
+          {{ loadingEditor ? '加载中…' : '编辑' }}
         </button>
         <button
           type="button"
@@ -203,11 +239,20 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div ref="editorHost" class="py-playground__editor"></div>
-    <pre
-      v-if="!mounted"
-      class="py-playground__fallback"
-    ><code>{{ initialCode }}</code></pre>
+    <!--
+      静态模式：直接用构建阶段 Shiki 产出的高亮 HTML（默认插槽），
+      首屏不加载任何编辑器；点击后切换到下方的 CodeMirror。
+    -->
+    <div
+      v-if="mode === 'static'"
+      class="py-playground__static"
+      @click="handleStaticClick"
+      @keydown.enter.prevent="activateEditor"
+    >
+      <slot />
+      <span class="py-playground__hint" aria-hidden="true">点击编辑</span>
+    </div>
+    <div v-else ref="editorHost" class="py-playground__editor"></div>
 
     <div
       v-if="status || stdout || stderr || error"
@@ -308,6 +353,60 @@ onBeforeUnmount(() => {
   border-color: #ff7b72;
 }
 
+/* ── 静态高亮代码（构建阶段 Shiki 产物）───────────────── */
+
+.py-playground__static {
+  position: relative;
+  cursor: text;
+}
+
+.py-playground__static :deep(pre) {
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: var(--vp-font-family-mono);
+  font-size: 13px;
+  line-height: 1.65;
+  background: transparent;
+  tab-size: 4;
+}
+
+.py-playground__static :deep(code) {
+  display: block;
+  width: fit-content;
+  min-width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: pre;
+}
+
+.py-playground__static :deep(.line) {
+  display: inline;
+}
+
+.py-playground__hint {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 1px 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #c4b5fd;
+  pointer-events: none;
+  background: rgba(139, 92, 246, 0.16);
+  border: 1px solid rgba(139, 92, 246, 0.42);
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.py-playground__static:hover .py-playground__hint {
+  opacity: 1;
+}
+
+/* ── CodeMirror 编辑器 ─────────────────────────────── */
+
 .py-playground__editor :deep(.cm-editor) {
   background: #0d1117;
 }
@@ -340,20 +439,7 @@ onBeforeUnmount(() => {
   border-radius: 2px;
 }
 
-.py-playground__fallback {
-  padding: 12px 16px;
-  margin: 0;
-  overflow: auto;
-  font-family: var(--vp-font-family-mono);
-  font-size: 13px;
-  line-height: 1.65;
-  color: #c9d1d9;
-  background: #0d1117;
-}
-
-.py-playground__fallback code {
-  font-family: inherit;
-}
+/* ── 运行结果 ─────────────────────────────────────── */
 
 .py-playground__result {
   background: #0d1117;

@@ -34,8 +34,8 @@ Python3Docs
 
 ## 可运行代码块
 
-- `apps/docs/.vitepress/config.mts` 会把每个 ` ```python ` 代码块渲染成 `<PythonPlayground>` 组件。
-- 编辑器使用 CodeMirror 6；点击「运行」后由 Web Worker 里的 Pyodide 执行，死循环可以用「停止」终止。
+- `apps/docs/.vitepress/config.mts` 会把每个 ` ```python ` 代码块渲染成 `<PythonPlayground>` 组件：构建阶段用 Shiki 生成静态高亮 HTML，首屏不加载编辑器；点击代码区（或「编辑」按钮）才动态加载 CodeMirror 6。
+- 「运行」由整站单例的 Web Worker 里的 Pyodide 执行，死循环可以用「停止」终止（停止会重启 Worker）。
 - 首次运行需要加载约 12 MB 的 Pyodide 运行时，之后使用浏览器缓存。运行时由 `scripts/copy-pyodide.mjs` 从 `node_modules/pyodide` 复制到 `apps/docs/public/pyodide/`，该目录已加入 `.gitignore`。
 - `pnpm docs:dev` / `pnpm docs:build` 会自动执行 `pnpm prepare:pyodide`；如果绕过 pnpm 直接运行 `vitepress`，需要先手动执行一次。
 - `bash`、`text`、`toml` 等非 Python 代码块保持普通静态展示。
